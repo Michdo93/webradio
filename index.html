@@ -8,9 +8,10 @@
         :root {
             --bg-color: #121212;
             --card-bg: #1e1e1e;
-            --accent-color: #1db954; /* Spotify-Grün als Akzent */
+            --accent-color: #1db954; /* Spotify-Grün */
             --text-color: #ffffff;
             --text-muted: #b3b3b3;
+            --error-color: #e91429;
         }
 
         body {
@@ -32,19 +33,56 @@
             width: 100%;
             max-width: 400px;
             text-align: center;
+            position: relative;
         }
 
         h1 {
-            font-size: 1.5rem;
-            margin-bottom: 5px;
+            font-size: 1.2rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 20px;
         }
 
-        .current-station {
-            font-size: 1.1rem;
+        /* Der interaktive Sender-Button */
+        .current-station-trigger {
+            background: #282828;
+            border: 2px solid #333;
+            border-radius: 10px;
+            padding: 20px;
+            font-size: 1.3rem;
             color: var(--accent-color);
-            margin-bottom: 25px;
             font-weight: bold;
-            min-height: 24px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .current-station-trigger:hover {
+            background: #333;
+            border-color: var(--accent-color);
+        }
+
+        .current-station-trigger::after {
+            content: '▾';
+            font-size: 1rem;
+            color: var(--text-muted);
+        }
+
+        .status-msg {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            min-height: 20px;
+            margin-bottom: 25px;
+        }
+
+        .status-msg.error {
+            color: var(--error-color);
+            font-weight: bold;
         }
 
         .controls {
@@ -54,24 +92,21 @@
             margin-bottom: 25px;
         }
 
-        button {
+        button.control-btn {
             background-color: #333;
             color: white;
             border: none;
-            padding: 12px 24px;
+            padding: 14px 28px;
             border-radius: 25px;
             cursor: pointer;
             font-weight: bold;
+            font-size: 1rem;
             transition: all 0.2s ease;
         }
 
-        button:hover {
+        button.control-btn:hover {
             background-color: var(--accent-color);
             transform: scale(1.05);
-        }
-
-        button:active {
-            transform: scale(0.95);
         }
 
         .volume-container {
@@ -79,7 +114,6 @@
             align-items: center;
             justify-content: center;
             gap: 10px;
-            margin-bottom: 25px;
         }
 
         input[type="range"] {
@@ -88,22 +122,96 @@
             cursor: pointer;
         }
 
+        /* OVERLAY / MODAL STYLING */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(5px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            z-index: 100;
+        }
+
+        .modal-overlay.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            width: 90%;
+            max-width: 400px;
+            height: 80vh;
+            border-radius: 15px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.4rem;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.8rem;
+            cursor: pointer;
+        }
+
+        .close-btn:hover {
+            color: var(--text-color);
+        }
+
+        /* Suchfeld */
+        .search-input {
+            width: 100%;
+            padding: 12px;
+            background: #282828;
+            border: 1px solid #444;
+            border-radius: 8px;
+            color: white;
+            font-size: 1rem;
+            box-sizing: border-box;
+            margin-bottom: 15px;
+        }
+
+        .search-input:focus {
+            outline: 1px solid var(--accent-color);
+        }
+
+        /* Scrollbare Senderliste */
         .station-list {
-            text-align: left;
-            max-height: 200px;
+            flex: 1;
             overflow-y: auto;
-            border-top: 1px solid #333;
-            padding-top: 15px;
+            text-align: left;
+            padding-right: 5px;
         }
 
         .station-item {
-            padding: 10px;
-            border-radius: 5px;
+            padding: 14px 10px;
+            border-bottom: 1px solid #282828;
             cursor: pointer;
             transition: background 0.2s;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            border-radius: 5px;
         }
 
         .station-item:hover {
@@ -116,7 +224,7 @@
             background-color: #222;
         }
 
-        /* Scrollbar-Styling für die Senderliste */
+        /* Scrollbar-Design */
         .station-list::-webkit-scrollbar {
             width: 6px;
         }
@@ -130,13 +238,18 @@
 
 <div class="radio-container">
     <h1>WebRadio</h1>
-    <div class="current-station" id="currentStation">Lade Sender...</div>
+    
+    <div class="current-station-trigger" id="stationTrigger" onclick="openModal()">
+        Lade Sender...
+    </div>
+    
+    <div class="status-msg" id="statusMsg">Bereit</div>
 
     <audio id="audioPlayer"></audio>
 
     <div class="controls">
-        <button id="playBtn" onclick="togglePlay()">Play</button>
-        <button id="muteBtn" onclick="toggleMute()">Mute</button>
+        <button class="control-btn" id="playBtn" onclick="togglePlay()">Play</button>
+        <button class="control-btn" id="muteBtn" onclick="toggleMute()">Mute</button>
     </div>
 
     <div class="volume-container">
@@ -144,83 +257,111 @@
         <input type="range" id="volumeSlider" min="0" max="1" step="0.01" value="0.5" oninput="changeVolume(this.value)">
         <span>🔊</span>
     </div>
+</div>
 
-    <h3>Senderliste</h3>
-    <div class="station-list" id="stationList">
+<div class="modal-overlay" id="modalOverlay" onclick="closeModalOnOverlay(event)">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Sender wählen</h2>
+            <button class="close-btn" onclick="closeModal()">&times;</button>
         </div>
+        
+        <input type="text" class="search-input" id="searchInput" placeholder="Sender suchen..." oninput="filterStations()">
+        
+        <div class="station-list" id="stationList">
+            </div>
+    </div>
 </div>
 
 <script>
     const audio = document.getElementById('audioPlayer');
     const playBtn = document.getElementById('playBtn');
     const muteBtn = document.getElementById('muteBtn');
-    const currentStationText = document.getElementById('currentStation');
+    const stationTrigger = document.getElementById('stationTrigger');
+    const statusMsg = document.getElementById('statusMsg');
     const stationListContainer = document.getElementById('stationList');
     const volumeSlider = document.getElementById('volumeSlider');
+    const modalOverlay = document.getElementById('modalOverlay');
+    const searchInput = document.getElementById('searchInput');
 
     let stations = [];
     let currentStationIndex = null;
     let isMuted = false;
     let savedVolume = 0.5;
 
-    // Standard-Lautstärke setzen
     audio.volume = savedVolume;
 
     // 1. Sender aus JSON laden
     async function loadStations() {
         try {
-            // "stations.json" liegt im selben Verzeichnis
             const response = await fetch('stations.json');
             stations = await response.json();
             
             if (stations.length > 0) {
-                renderStationList();
-                // Ersten Sender standardmäßig vorauswählen, aber noch nicht abspielen
+                renderStationList(stations);
                 selectStation(0, false);
             } else {
-                currentStationText.innerText = "Keine Sender gefunden";
+                stationTrigger.innerText = "Keine Sender";
             }
         } catch (error) {
-            console.error("Fehler beim Laden der Senderliste:", error);
-            currentStationText.innerText = "Fehler beim Laden der Liste";
+            console.error(error);
+            stationTrigger.innerText = "Fehler";
+            setStatus("Fehler beim Laden der stations.json", true);
         }
     }
 
-    // 2. Senderliste im HTML anzeigen
-    function renderStationList() {
+    // 2. Senderliste rendern (wird auch für die Suche wiederverwendet)
+    function renderStationList(stationsToRender) {
         stationListContainer.innerHTML = '';
-        stations.forEach((station, index) => {
+        stationsToRender.forEach((station) => {
+            // Finde den echten Index im Haupt-Array
+            const realIndex = stations.findIndex(s => s.url === station.url);
+            
             const div = document.createElement('div');
             div.className = 'station-item';
-            div.id = `station-${index}`;
+            if (realIndex === currentStationIndex) div.classList.add('active');
             div.innerText = station.name;
-            div.onclick = () => selectStation(index, true);
+            div.onclick = () => {
+                selectStation(realIndex, true);
+                closeModal();
+            };
             stationListContainer.appendChild(div);
         });
     }
 
-    // 3. Einen Sender auswählen
-    function selectStation(index, shouldPlay = true) {
-        // Alte Markierung entfernen
-        if (currentStationIndex !== null) {
-            document.getElementById(`station-${currentStationIndex}`)?.classList.remove('active');
-        }
+    // 3. Suche/Filter-Funktion
+    function filterStations() {
+        const query = searchInput.value.toLowerCase();
+        const filtered = stations.filter(station => 
+            station.name.toLowerCase().includes(query)
+        );
+        renderStationList(filtered);
+    }
 
+    // 4. Sender auswählen
+    function selectStation(index, shouldPlay = true) {
         currentStationIndex = index;
         const station = stations[index];
         
-        currentStationText.innerText = station.name;
-        document.getElementById(`station-${index}`)?.classList.add('active');
+        stationTrigger.innerText = station.name;
+        setStatus("Sender gewechselt");
+
+        // UI-Klasse "active" in der Liste updaten
+        Array.from(stationListContainer.children).forEach((child, i) => {
+            child.classList.toggle('active', i === index);
+        });
         
-        // Stream-URL austauschen
         audio.src = station.url;
 
         if (shouldPlay) {
             playRadio();
+        } else {
+            playBtn.innerText = 'Play';
+            playBtn.style.backgroundColor = '#333';
         }
     }
 
-    // 4. Play / Pause Logik
+    // 5. Play / Pause
     function togglePlay() {
         if (audio.paused) {
             playRadio();
@@ -230,14 +371,17 @@
     }
 
     function playRadio() {
-        // Bei Live-Streams lädt "load()" den Stream neu, damit man direkt "Live" einsteigt
+        setStatus("Verbinde zum Stream...");
         audio.load(); 
         audio.play().then(() => {
             playBtn.innerText = 'Pause';
             playBtn.style.backgroundColor = 'var(--accent-color)';
+            setStatus("Live");
         }).catch(err => {
-            console.error("Wiedergabe fehlgeschlagen:", err);
-            alert("Stream konnte nicht geladen werden. Evtl. blockiert der Browser Autoplay oder die URL ist offline.");
+            console.error("Wiedergabefehler:", err);
+            playBtn.innerText = 'Play';
+            playBtn.style.backgroundColor = '#333';
+            setStatus("Stream-Fehler oder Autoplay blockiert.", true);
         });
     }
 
@@ -245,27 +389,46 @@
         audio.pause();
         playBtn.innerText = 'Play';
         playBtn.style.backgroundColor = '#333';
+        setStatus("Pausiert");
     }
 
-    // 5. Mute Logik
-    function toggleMute() {
-        isMuted = !isMuted;
-        audio.muted = isMuted;
-        
-        if (isMuted) {
-            muteBtn.innerText = 'Unmute';
-            volumeSlider.value = 0;
+    // Helper für Statusnachrichten
+    function setStatus(msg, isError = false) {
+        statusMsg.innerText = msg;
+        if (isError) {
+            statusMsg.classList.add('error');
         } else {
-            muteBtn.innerText = 'Mute';
-            volumeSlider.value = audio.volume;
+            statusMsg.classList.remove('error');
         }
     }
 
-    // 6. Lautstärke ändern
+    // Modal öffnen / schließen
+    function openModal() {
+        modalOverlay.classList.add('open');
+        searchInput.value = ''; // Suche zurücksetzen beim Öffnen
+        renderStationList(stations);
+        searchInput.focus();
+    }
+
+    function closeModal() {
+        modalOverlay.classList.remove('open');
+    }
+
+    function closeModalOnOverlay(e) {
+        if (e.target === modalOverlay) closeModal();
+    }
+
+    // Lautstärke & Mute
+    function toggleMute() {
+        isMuted = !isMuted;
+        audio.muted = isMuted;
+        muteBtn.innerText = isMuted ? 'Unmute' : 'Mute';
+        volumeSlider.value = isMuted ? 0 : audio.volume;
+    }
+
     function changeVolume(value) {
         audio.volume = value;
         savedVolume = value;
-        
         if (value == 0) {
             audio.muted = true;
             muteBtn.innerText = 'Unmute';
@@ -276,9 +439,7 @@
         }
     }
 
-    // Initialisierung beim Laden der Seite
     window.onload = loadStations;
 </script>
-
 </body>
 </html>
