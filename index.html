@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mein GitHub Webradio</title>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --accent-color: #1db954; /* Spotify-Grün als Akzent */
+            --text-color: #ffffff;
+            --text-muted: #b3b3b3;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .radio-container {
+            background-color: var(--card-bg);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+        }
+
+        .current-station {
+            font-size: 1.1rem;
+            color: var(--accent-color);
+            margin-bottom: 25px;
+            font-weight: bold;
+            min-height: 24px;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        button {
+            background-color: #333;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s ease;
+        }
+
+        button:hover {
+            background-color: var(--accent-color);
+            transform: scale(1.05);
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        .volume-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+
+        input[type="range"] {
+            accent-color: var(--accent-color);
+            width: 60%;
+            cursor: pointer;
+        }
+
+        .station-list {
+            text-align: left;
+            max-height: 200px;
+            overflow-y: auto;
+            border-top: 1px solid #333;
+            padding-top: 15px;
+        }
+
+        .station-item {
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.2s;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .station-item:hover {
+            background-color: #2a2a2a;
+        }
+
+        .station-item.active {
+            color: var(--accent-color);
+            font-weight: bold;
+            background-color: #222;
+        }
+
+        /* Scrollbar-Styling für die Senderliste */
+        .station-list::-webkit-scrollbar {
+            width: 6px;
+        }
+        .station-list::-webkit-scrollbar-thumb {
+            background-color: #444;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="radio-container">
+    <h1>WebRadio</h1>
+    <div class="current-station" id="currentStation">Lade Sender...</div>
+
+    <audio id="audioPlayer"></audio>
+
+    <div class="controls">
+        <button id="playBtn" onclick="togglePlay()">Play</button>
+        <button id="muteBtn" onclick="toggleMute()">Mute</button>
+    </div>
+
+    <div class="volume-container">
+        <span>🔈</span>
+        <input type="range" id="volumeSlider" min="0" max="1" step="0.01" value="0.5" oninput="changeVolume(this.value)">
+        <span>🔊</span>
+    </div>
+
+    <h3>Senderliste</h3>
+    <div class="station-list" id="stationList">
+        </div>
+</div>
+
+<script>
+    const audio = document.getElementById('audioPlayer');
+    const playBtn = document.getElementById('playBtn');
+    const muteBtn = document.getElementById('muteBtn');
+    const currentStationText = document.getElementById('currentStation');
+    const stationListContainer = document.getElementById('stationList');
+    const volumeSlider = document.getElementById('volumeSlider');
+
+    let stations = [];
+    let currentStationIndex = null;
+    let isMuted = false;
+    let savedVolume = 0.5;
+
+    // Standard-Lautstärke setzen
+    audio.volume = savedVolume;
+
+    // 1. Sender aus JSON laden
+    async function loadStations() {
+        try {
+            // "stations.json" liegt im selben Verzeichnis
+            const response = await fetch('stations.json');
+            stations = await response.json();
+            
+            if (stations.length > 0) {
+                renderStationList();
+                // Ersten Sender standardmäßig vorauswählen, aber noch nicht abspielen
+                selectStation(0, false);
+            } else {
+                currentStationText.innerText = "Keine Sender gefunden";
+            }
+        } catch (error) {
+            console.error("Fehler beim Laden der Senderliste:", error);
+            currentStationText.innerText = "Fehler beim Laden der Liste";
+        }
+    }
+
+    // 2. Senderliste im HTML anzeigen
+    function renderStationList() {
+        stationListContainer.innerHTML = '';
+        stations.forEach((station, index) => {
+            const div = document.createElement('div');
+            div.className = 'station-item';
+            div.id = `station-${index}`;
+            div.innerText = station.name;
+            div.onclick = () => selectStation(index, true);
+            stationListContainer.appendChild(div);
+        });
+    }
+
+    // 3. Einen Sender auswählen
+    function selectStation(index, shouldPlay = true) {
+        // Alte Markierung entfernen
+        if (currentStationIndex !== null) {
+            document.getElementById(`station-${currentStationIndex}`)?.classList.remove('active');
+        }
+
+        currentStationIndex = index;
+        const station = stations[index];
+        
+        currentStationText.innerText = station.name;
+        document.getElementById(`station-${index}`)?.classList.add('active');
+        
+        // Stream-URL austauschen
+        audio.src = station.url;
+
+        if (shouldPlay) {
+            playRadio();
+        }
+    }
+
+    // 4. Play / Pause Logik
+    function togglePlay() {
+        if (audio.paused) {
+            playRadio();
+        } else {
+            pauseRadio();
+        }
+    }
+
+    function playRadio() {
+        // Bei Live-Streams lädt "load()" den Stream neu, damit man direkt "Live" einsteigt
+        audio.load(); 
+        audio.play().then(() => {
+            playBtn.innerText = 'Pause';
+            playBtn.style.backgroundColor = 'var(--accent-color)';
+        }).catch(err => {
+            console.error("Wiedergabe fehlgeschlagen:", err);
+            alert("Stream konnte nicht geladen werden. Evtl. blockiert der Browser Autoplay oder die URL ist offline.");
+        });
+    }
+
+    function pauseRadio() {
+        audio.pause();
+        playBtn.innerText = 'Play';
+        playBtn.style.backgroundColor = '#333';
+    }
+
+    // 5. Mute Logik
+    function toggleMute() {
+        isMuted = !isMuted;
+        audio.muted = isMuted;
+        
+        if (isMuted) {
+            muteBtn.innerText = 'Unmute';
+            volumeSlider.value = 0;
+        } else {
+            muteBtn.innerText = 'Mute';
+            volumeSlider.value = audio.volume;
+        }
+    }
+
+    // 6. Lautstärke ändern
+    function changeVolume(value) {
+        audio.volume = value;
+        savedVolume = value;
+        
+        if (value == 0) {
+            audio.muted = true;
+            muteBtn.innerText = 'Unmute';
+        } else {
+            audio.muted = false;
+            muteBtn.innerText = 'Mute';
+            isMuted = false;
+        }
+    }
+
+    // Initialisierung beim Laden der Seite
+    window.onload = loadStations;
+</script>
+
+</body>
+</html>
