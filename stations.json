@@ -1,0 +1,14 @@
+[
+  {
+    "name": "Deutschlandfunk",
+    "url": "https://st01.sslstream.dlf.de/dlf/01/128/mp3/stream.mp3"
+  },
+  {
+    "name": "Antenne Bayern",
+    "url": "https://stream.antenne.de/antenne-bayern/stream/mp3"
+  },
+  {
+    "name": "SWR3",
+    "url": "https://swr-swr3-live.cast.addradio.de/swr/swr3/live/mp3/128/stream.mp3"
+  }
+]
