@@ -5,10 +5,10 @@
   },
   {
     "name": "Antenne Bayern",
-    "url": "https://stream.antenne.de/antenne-bayern/stream/mp3"
+    "url": "http://mp3channels.webradio.antenne.de/antenne"
   },
   {
     "name": "SWR3",
-    "url": "https://swr-swr3-live.cast.addradio.de/swr/swr3/live/mp3/128/stream.mp3"
+    "url": "https://d121.rndfnk.com/ard/swr/swr3/live/mp3/128/stream.mp3?aggregator=web&cid=01FC1X5J7PN2N3YQPZYT8YDM9M&sid=2D9gfBju8QbeDa0gfuafFLgMDhk&token=fP3ORreQOqCrnJjY36dldQse5lYtgarP3gVoRlvcAHU&tvf=wqO5qBf_CRdkMTIxLnJuZGZuay5jb20"
   }
 ]
