@@ -89,5 +89,3 @@ Wenn du einen neuen Sender hinzufügen möchtest:
 * **Stream-Formate:** Die meisten gängigen Web-Streams nutzen MP3 oder AAC/M4A. Diese werden vom integrierten HTML5 `<audio>`-Element nativ in allen modernen Browsern (Chrome, Firefox, Safari, Edge) unterstützt.
 
 ```
-
-```
